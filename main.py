@@ -1,6 +1,6 @@
 import os
 import subprocess
-from pytube import YouTube
+import yt_dlp
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
@@ -16,6 +16,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def download_audio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     url = update.message.text
 
+    # Check if the URL contains 'youtube.com' or 'youtu.be'
     if "youtube.com" not in url and "youtu.be" not in url:
         await update.message.reply_text("❌ Please send a valid YouTube link.")
         return
@@ -23,40 +24,40 @@ async def download_audio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await update.message.reply_text("📥 Downloading and converting audio...")
 
-        yt = YouTube(url)
+        # Initialize yt-dlp downloader
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': os.path.join(DOWNLOAD_DIR, '%(id)s.%(ext)s'),
+            'postprocessors': [{
+                'key': 'FFmpegAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'quiet': False,
+        }
 
-        # Check if there's an audio stream available
-        audio_stream = yt.streams.filter(only_audio=True).first()
-        if audio_stream is None:
-            await update.message.reply_text("⚠️ No audio stream available for this video.")
-            return
+        # Download audio from YouTube
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(url, download=True)
 
-        out_file = audio_stream.download(output_path=DOWNLOAD_DIR)
-        base, _ = os.path.splitext(out_file)
-        mp3_path = base + ".mp3"
+        # Get the downloaded file path
+        downloaded_file_path = os.path.join(DOWNLOAD_DIR, f"{info_dict['id']}.mp3")
 
-        # Convert to MP3 using ffmpeg
-        subprocess.run([
-            "ffmpeg", "-i", out_file, "-vn", "-ab", "192k", "-ar", "44100", "-y", mp3_path
-        ], check=True)
-
-        os.remove(out_file)
-
-        # Check if the file is too large to send
-        file_size = os.path.getsize(mp3_path) / (1024 * 1024)  # in MB
+        # Check if the file is too large
+        file_size = os.path.getsize(downloaded_file_path) / (1024 * 1024)  # MB
         if file_size > 49:
             await update.message.reply_text("⚠️ Audio is too large (>50MB). Try a shorter video.")
-            os.remove(mp3_path)
+            os.remove(downloaded_file_path)
             return
 
-        with open(mp3_path, "rb") as audio_file:
-            await update.message.reply_audio(audio_file, title=yt.title)
+        with open(downloaded_file_path, "rb") as audio_file:
+            await update.message.reply_audio(audio_file, title=info_dict.get('title'))
 
-        os.remove(mp3_path)
+        os.remove(downloaded_file_path)
 
     except Exception as e:
         print("❌ Error:", e)
-        await update.message.reply_text(f"⚠️ Error: {e}")
+        await update.message.reply_text(f"⚠️ Error: {str(e)}")
 
 # Main function
 if __name__ == "__main__":
