@@ -20,7 +20,10 @@ def is_valid_youtube_url(url):
     """Validate if the URL is from YouTube"""
     try:
         parsed = urlparse(url)
-        return any(domain in parsed.netloc for domain in ['youtube.com', 'youtu.be'])
+        # Handle both full youtube.com URLs and shortened youtu.be URLs
+        # Also handle URLs with query parameters
+        valid_domains = ['youtube.com', 'youtu.be', 'www.youtube.com', 'm.youtube.com']
+        return any(domain in parsed.netloc for domain in valid_domains)
     except:
         return False
 
