@@ -147,14 +147,13 @@ async def convert_to_mp3(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     
                 except Exception as inner_e:
                     logger.error(f"Inner error: {str(inner_e)}")
-                    raise  # Re-raise the exception to be caught by outer try-except
-        
+                    raise
+
     except Exception as e:
         logger.error(f"Outer error: {str(e)}")
         if status_message:
-            await status_message.edit_text(
-                f"❌ Error: {str(e)[:100]}"
-            )
+            await status_message.edit_text(f"❌ Error: {str(e)[:100]}")
+            
     finally:
         try:
             cleanup_path = f'downloads/{chat_id}'
