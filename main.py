@@ -71,7 +71,30 @@ async def convert_to_mp3(update: Update, context: ContextTypes.DEFAULT_TYPE):
             'outtmpl': f'downloads/{chat_id}/%(title)s.%(ext)s',
             'noplaylist': True,
             'quiet': False,
-            'no_warnings': False
+            'no_warnings': False,
+            'nocheckcertificate': True,
+            'no_check_certificate': True,
+            'prefer_insecure': True,
+            'geo_bypass': True,
+            'geo_bypass_country': 'US',
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+            },
+            'socket_timeout': 30,
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android', 'web'],
+                    'player_skip': ['webpage', 'config', 'js'],
+                }
+            }
         }
         
         os.makedirs(f'downloads/{chat_id}', exist_ok=True)
