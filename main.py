@@ -100,52 +100,50 @@ async def convert_to_mp3(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 logger.info(f"Created directory: {downloads_path}")
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                await status_message.edit_text("🔍 Checking video...")
+                logger.info(f"Extracting info for URL: {url}")
+                
                 try:
-                    await status_message.edit_text("🔍 Checking video...")
-                    logger.info(f"Extracting info for URL: {url}")
+                    info = ydl.extract_info(url, download=True)
+                    if not info:
+                        raise Exception("No video information found")
                     
-                    # Try direct download first
-                    try:
-                        info = ydl.extract_info(url, download=True)
-                        if not info:
-                            raise Exception("No video information found")
+                    video_title = info['title']
+                    mp3_file = f"downloads/{chat_id}/{video_title}.mp3"
+                    logger.info(f"MP3 file path: {mp3_file}")
+                    
+                    if os.path.exists(mp3_file):
+                        file_size = os.path.getsize(mp3_file) / (1024 * 1024)
+                        logger.info(f"File size: {file_size}MB")
                         
-                        video_title = info['title']
-                        mp3_file = f"downloads/{chat_id}/{video_title}.mp3"
-                        logger.info(f"MP3 file path: {mp3_file}")
+                        if file_size > 50:
+                            await status_message.edit_text("❌ File size exceeds Telegram's 50MB limit.")
+                            return
                         
-                        if os.path.exists(mp3_file):
-                            file_size = os.path.getsize(mp3_file) / (1024 * 1024)
-                            logger.info(f"File size: {file_size}MB")
-                            
-                            if file_size > 50:
-                                await status_message.edit_text("❌ File size exceeds Telegram's 50MB limit.")
-                                return
-                            
-                            await status_message.edit_text("📤 Uploading your MP3...")
-                            with open(mp3_file, 'rb') as audio:
-                                await update.message.reply_audio(
-                                    audio,
-                                    title=video_title,
-                                    performer="YouTube to MP3 Bot",
-                                    caption="🎵 Here's your MP3!"
-                                )
-                            await status_message.delete()
-                        else:
-                            logger.error(f"MP3 file not found: {mp3_file}")
-                            await status_message.edit_text("❌ Failed to create MP3 file.")
-                            
-                        except yt_dlp.utils.DownloadError as e:
-                            logger.error(f"Download error details: {str(e)}")
-                            error_msg = str(e).lower()
-                            if "private video" in error_msg:
-                                await status_message.edit_text("❌ This video is private")
-                            elif "not available in your country" in error_msg:
-                                await status_message.edit_text("❌ This video is not available in the current region")
-                            elif "video unavailable" in error_msg:
-                                await status_message.edit_text("❌ This video is unavailable or has been removed")
-                            else:
-                                await status_message.edit_text(f"❌ Download error: {str(e)[:100]}")
+                        await status_message.edit_text("📤 Uploading your MP3...")
+                        with open(mp3_file, 'rb') as audio:
+                            await update.message.reply_audio(
+                                audio,
+                                title=video_title,
+                                performer="YouTube to MP3 Bot",
+                                caption="🎵 Here's your MP3!"
+                            )
+                        await status_message.delete()
+                    else:
+                        logger.error(f"MP3 file not found: {mp3_file}")
+                        await status_message.edit_text("❌ Failed to create MP3 file.")
+                        
+                except yt_dlp.utils.DownloadError as e:
+                    logger.error(f"Download error details: {str(e)}")
+                    error_msg = str(e).lower()
+                    if "private video" in error_msg:
+                        await status_message.edit_text("❌ This video is private")
+                    elif "not available in your country" in error_msg:
+                        await status_message.edit_text("❌ This video is not available in the current region")
+                    elif "video unavailable" in error_msg:
+                        await status_message.edit_text("❌ This video is unavailable or has been removed")
+                    else:
+                        await status_message.edit_text(f"❌ Download error: {str(e)[:100]}")
                     
                 except Exception as inner_e:
                     logger.error(f"Inner error: {str(inner_e)}")
