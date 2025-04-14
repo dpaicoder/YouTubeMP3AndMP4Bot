@@ -1,5 +1,4 @@
 import os
-import subprocess
 import yt_dlp
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
