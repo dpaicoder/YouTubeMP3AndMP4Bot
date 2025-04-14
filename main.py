@@ -1,17 +1,3 @@
-import os
-from pytube import YouTube
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
-
-# Create download directory
-DOWNLOAD_DIR = "downloads"
-os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-
-# /start command handler
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Send me a YouTube video link and I’ll convert it to MP3!")
-
-# Function to handle YouTube links
 async def download_audio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     url = update.message.text
 
@@ -23,28 +9,33 @@ async def download_audio(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("📥 Downloading audio...")
 
         yt = YouTube(url)
+
+        # Get best audio stream
         audio_stream = yt.streams.filter(only_audio=True).first()
+        if not audio_stream:
+            await update.message.reply_text("❌ No audio stream found.")
+            return
+
         out_file = audio_stream.download(output_path=DOWNLOAD_DIR)
 
-        mp3_path = out_file.replace(".mp4", ".mp3")
+        # Ensure output is .mp3
+        base, ext = os.path.splitext(out_file)
+        mp3_path = base + ".mp3"
         os.rename(out_file, mp3_path)
 
+        # Check file size (Telegram bots have a 50MB limit)
+        file_size = os.path.getsize(mp3_path) / (1024 * 1024)  # in MB
+        if file_size > 49:
+            await update.message.reply_text("⚠️ The audio file is too large for Telegram (>50MB). Try a shorter video.")
+            os.remove(mp3_path)
+            return
+
+        # Send audio
         with open(mp3_path, "rb") as audio_file:
             await update.message.reply_audio(audio_file, title=yt.title)
 
         os.remove(mp3_path)
 
     except Exception as e:
-        print(f"Error: {e}")
-        await update.message.reply_text("⚠️ Something went wrong. Try again later.")
-
-# Create and run the bot
-if __name__ == "__main__":
-    token = os.getenv("BOT_TOKEN")
-    app = ApplicationBuilder().token(token).build()
-
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, download_audio))
-
-    print("✅ Bot is running...")
-    app.run_polling()
+        print("❌ Error occurred:", e)
+        await update.message.reply_text(f"⚠️ Error: {e}")
