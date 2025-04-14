@@ -144,10 +144,9 @@ async def convert_to_mp3(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         await status_message.edit_text("❌ This video is unavailable or has been removed")
                     else:
                         await status_message.edit_text(f"❌ Download error: {str(e)[:100]}")
-                
-            except Exception as e:
-                logger.error(f"Inner error: {str(e)}")
-                raise
+                except Exception as e:
+                    logger.error(f"Inner error: {str(e)}")
+                    raise
 
     except Exception as e:
         logger.error(f"Outer error: {str(e)}")
