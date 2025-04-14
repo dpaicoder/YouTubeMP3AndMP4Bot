@@ -1,8 +1,15 @@
-FROM python:3.10-slim
-
-RUN apt-get update && apt-get install -y ffmpeg &&     pip install --no-cache-dir yt-dlp python-telegram-bot flask python-dotenv
+FROM python:3.11-slim
 
 WORKDIR /app
+
+# Copy all files to the container
 COPY . .
 
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Set the environment variable for bot token
+ENV BOT_TOKEN="your-bot-token"
+
+# Command to run the bot
 CMD ["python", "main.py"]
