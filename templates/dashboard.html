@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="p-4">
+    <h2>📊 Bot Usage Dashboard</h2>
+    <p>Total Downloads: <strong>{{ stats }}</strong> | Unique Users: <strong>{{ users }}</strong></p>
+    <table class="table table-bordered table-hover">
+        <thead><tr><th>User ID</th><th>Username</th><th>URL</th><th>Type</th><th>Date</th></tr></thead>
+        <tbody>
+            {% for log in logs %}
+            <tr><td>{{ log[0] }}</td><td>@{{ log[1] }}</td><td>{{ log[2][:40] }}...</td><td>{{ log[3] }}</td><td>{{ log[4] }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
